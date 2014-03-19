@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Point;
 import android.net.http.AndroidHttpClient;
+import android.util.Log;
 import android.view.Display;
 import android.view.WindowManager;
 
@@ -26,6 +27,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class InterfaceliftMacdropsClient {
+    private static final String TAG = "InterfaceliftMacdropsClient";
+
     private static final String USER_AGENT = "Macdrops 1.1 rv:4 (Macintosh; Mac OS X 10.9.2; en_US)";
     private static final String QUERY_HOST = "http://macdrops.ifl.cc";
     private static final String QUERY_URL = "/v1/date.json?res=%s&lic=%s";
@@ -98,6 +101,7 @@ public class InterfaceliftMacdropsClient {
 
     protected String getQueryUrl() {
         Dimension dimen = getSuitablePhotoDimension();
+        Log.d(TAG, "Suggested wallpaper size: " + dimen.toString());
 
         return QUERY_HOST + String.format(QUERY_URL, dimen.toString(), mLicense);
     }

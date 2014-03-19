@@ -48,7 +48,7 @@ public class InterfaceliftArtSource extends RemoteMuzeiArtSource {
 
 
             InterfaceliftWallpaper.Download wallpaperDownload = wallpaper.getDownloads().get(0);
-            Log.v(TAG, "Found wallpaper size: " + wallpaperDownload.getResolution());
+            Log.d(TAG, "Found wallpaper size: " + wallpaperDownload.getResolution());
 
             String token = wallpaper.getToken();
             if (!token.equals(currentToken)) {
