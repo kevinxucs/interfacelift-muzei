@@ -21,7 +21,7 @@ android {
     compileSdkVersion 19
     buildToolsVersion "19.0.0"
 
-    def Properties versionProps = new Properties()
+    Properties versionProps = new Properties()
     versionProps.load(new FileInputStream(file('version.properties')))
 
     defaultConfig {
@@ -34,15 +34,19 @@ android {
 
     signingConfigs {
         release {
-            def Properties localProps = new Properties()
+            Properties localProps = new Properties()
             localProps.load(new FileInputStream(file('local.properties')))
-            def Properties keyProps = new Properties()
+            Properties keyProps = new Properties()
             assert localProps['keystore.props.file'];
             keyProps.load(new FileInputStream(file(localProps['keystore.props.file'])))
             storeFile file(keyProps["store"])
             keyAlias keyProps["alias"]
-            storePassword keyProps["storePass"]
-            keyPassword keyProps["pass"]
+
+            Console console = System.console();
+            if (console != null) {
+                storePassword new String(console.readPassword("\nEnter keystore password: "))
+                keyPassword new String(console.readPassword("Enter key password: "))
+            }
         }
     }
 
