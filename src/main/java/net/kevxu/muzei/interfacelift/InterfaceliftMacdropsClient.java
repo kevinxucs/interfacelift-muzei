@@ -3,26 +3,23 @@ package net.kevxu.muzei.interfacelift;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Point;
-import android.net.http.AndroidHttpClient;
 import android.util.Log;
 import android.view.Display;
 import android.view.WindowManager;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.client.protocol.ClientContext;
-import org.apache.http.impl.client.BasicCookieStore;
-import org.apache.http.protocol.BasicHttpContext;
-import org.apache.http.protocol.HttpContext;
-import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.CookieHandler;
+import java.net.CookieManager;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,7 +33,6 @@ public class InterfaceliftMacdropsClient {
     private static final String DEFAULT_LICENSE = "";
 
     private final Context mContext;
-    private final HttpClient mHttpClient;
     private final String mLicense;
 
     public InterfaceliftMacdropsClient(Context context) {
@@ -45,8 +41,11 @@ public class InterfaceliftMacdropsClient {
 
     public InterfaceliftMacdropsClient(Context context, String license) {
         mContext = context;
-        mHttpClient = AndroidHttpClient.newInstance(getUserAgent(), context);
         mLicense = license;
+
+        // Enable Cookie for HttpURLConnection
+        CookieManager cookieManager = new CookieManager();
+        CookieHandler.setDefault(cookieManager);
     }
 
     static final class Dimension {
@@ -66,6 +65,7 @@ public class InterfaceliftMacdropsClient {
 
     /**
      * Get suitable photo size based on the screen size of phone.
+     *
      * @return Dimension Dimension of suitable photo size.
      */
     protected Dimension getSuitablePhotoDimension() {
@@ -106,19 +106,23 @@ public class InterfaceliftMacdropsClient {
         return QUERY_HOST + String.format(QUERY_URL, dimen.toString(), mLicense);
     }
 
-    protected HttpContext getHttpContext() {
-        BasicCookieStore cookieStore = new BasicCookieStore();
-        HttpContext httpContext = new BasicHttpContext();
-        httpContext.setAttribute(ClientContext.COOKIE_STORE, cookieStore);
-
-        return httpContext;
-    }
-
     protected String fetchPlainText(String query) throws IOException {
-        HttpUriRequest request = new HttpGet(query);
-        HttpResponse response = mHttpClient.execute(request, getHttpContext());
+        URL url = new URL(query);
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestProperty("User-Agent", USER_AGENT);
 
-        return EntityUtils.toString(response.getEntity());
+        try {
+            InputStream in = new BufferedInputStream(connection.getInputStream());
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            byte[] buffer = new byte[1024];
+            int bytesRead;
+            while ((bytesRead = in.read(buffer)) > 0) {
+                out.write(buffer, 0, bytesRead);
+            }
+            return new String(out.toByteArray(), "UTF-8");
+        } finally {
+            connection.disconnect();
+        }
     }
 
     public InterfaceliftWallpaper getLatestWallpaper() throws IOException, JSONException {
