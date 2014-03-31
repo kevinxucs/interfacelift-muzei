@@ -3,7 +3,6 @@ package net.kevxu.muzei.interfacelift;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Point;
-import android.util.Log;
 import android.view.Display;
 import android.view.WindowManager;
 
@@ -46,21 +45,6 @@ public class InterfaceliftMacdropsClient {
         // Enable Cookie for HttpURLConnection
         CookieManager cookieManager = new CookieManager();
         CookieHandler.setDefault(cookieManager);
-    }
-
-    static final class Dimension {
-        final int width;
-        final int height;
-
-        protected Dimension(int width, int height) {
-            this.width = width;
-            this.height = height;
-        }
-
-        @Override
-        public String toString() {
-            return width + "x" + height;
-        }
     }
 
     /**

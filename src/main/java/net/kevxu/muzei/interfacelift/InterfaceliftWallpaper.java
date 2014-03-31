@@ -122,7 +122,7 @@ public class InterfaceliftWallpaper {
     }
 
     static class Download {
-        private String resolution;
+        private Dimension resolution;
         private String url;
         private int sizeInBytes;
 
@@ -130,7 +130,7 @@ public class InterfaceliftWallpaper {
             return Uri.parse(url);
         }
 
-        public String getResolution() {
+        public Dimension getResolution() {
             return resolution;
         }
 
@@ -154,7 +154,7 @@ public class InterfaceliftWallpaper {
             }
 
             public Builder setResolution(String resolution) {
-                download.resolution = resolution;
+                download.resolution = new Dimension(resolution);
                 return this;
             }
 

@@ -31,20 +31,18 @@ public class InterfaceliftArtSource extends RemoteMuzeiArtSource {
         final InterfaceliftMacdropsClient client = new InterfaceliftMacdropsClient(this);
 
         try {
-            InterfaceliftMacdropsClient.Dimension dimen = client.getSuitablePhotoDimension();
-            InterfaceliftMacdropsClient.Dimension alterDimen = new InterfaceliftMacdropsClient.Dimension(dimen.width + 1, dimen.height + 1);
+            Dimension dimen = client.getSuitablePhotoDimension();
 
             Log.d(TAG, "Suggested wallpaper size: " + dimen.toString());
 
-            InterfaceliftWallpaper wallpaper = client.getLatestWallpaper(dimen);
-            InterfaceliftWallpaper alterWallpaper = client.getLatestWallpaper(alterDimen);
+            InterfaceliftWallpaper sugWallpaper = client.getLatestWallpaper(dimen);
 
-            if (wallpaper == null || wallpaper.getDownloads() == null) {
+            if (sugWallpaper == null || sugWallpaper.getDownloads() == null) {
                 Log.w(TAG, "wallpaper null");
                 throw new RetryException();
             }
 
-            if (wallpaper.getDownloads().size() == 0) {
+            if (sugWallpaper.getDownloads().size() == 0) {
                 Log.w(TAG, "No photos returned from API.");
                 scheduleUpdate(System.currentTimeMillis() + ROTATE_TIME_MILLIS);
                 return;
@@ -52,26 +50,34 @@ public class InterfaceliftArtSource extends RemoteMuzeiArtSource {
 
             // TODO: Implement viewIntent for photo description
 
-            InterfaceliftWallpaper downloadWallpaper;
+            InterfaceliftWallpaper.Download sugWallpaperDownload = sugWallpaper.getDownloads().get(0);
+
+            Dimension alterDimen = new Dimension(sugWallpaperDownload.getResolution().width + 1, sugWallpaperDownload.getResolution().height + 1);
+            InterfaceliftWallpaper alterWallpaper = client.getLatestWallpaper(alterDimen);
+
+            InterfaceliftWallpaper wallpaper;
+            InterfaceliftWallpaper.Download wallpaperDownload;
             if (alterWallpaper != null
                     && alterWallpaper.getDownloads() != null
                     && alterWallpaper.getDownloads().size() > 0
-                    && alterWallpaper.getTimestamp() > wallpaper.getTimestamp()) {
+                    && alterWallpaper.getTimestamp() > sugWallpaper.getTimestamp()) {
                 Log.d(TAG, "Using alternative wallpaper size: " + alterDimen.toString());
 
-                downloadWallpaper = alterWallpaper;
+                wallpaper = alterWallpaper;
+                wallpaperDownload = alterWallpaper.getDownloads().get(0);
             } else {
-                downloadWallpaper = wallpaper;
+                wallpaper = sugWallpaper;
+                wallpaperDownload = sugWallpaperDownload;
             }
 
-            InterfaceliftWallpaper.Download wallpaperDownload = downloadWallpaper.getDownloads().get(0);
             Log.d(TAG, "Found wallpaper size: " + wallpaperDownload.getResolution());
+            Log.d(TAG, "Found wallpaper url: " + wallpaperDownload.getUrl());
 
-            String token = downloadWallpaper.getToken();
+            String token = wallpaper.getToken();
             if (!token.equals(currentToken)) {
                 publishArtwork(new Artwork.Builder()
-                        .title(downloadWallpaper.getDisplay())
-                        .byline(downloadWallpaper.getName())
+                        .title(wallpaper.getDisplay())
+                        .byline(wallpaper.getName())
                         .imageUri(wallpaperDownload.getUri())
                         .token(token)
                         .build());
