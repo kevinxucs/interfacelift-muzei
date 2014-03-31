@@ -49,8 +49,8 @@ public class InterfaceliftMacdropsClient {
     }
 
     static final class Dimension {
-        int width;
-        int height;
+        final int width;
+        final int height;
 
         protected Dimension(int width, int height) {
             this.width = width;
@@ -79,7 +79,7 @@ public class InterfaceliftMacdropsClient {
         int screenLayout = mContext.getResources().getConfiguration().screenLayout;
         boolean isXlarge = ((screenLayout & Configuration.SCREENLAYOUT_SIZE_MASK) == Configuration.SCREENLAYOUT_SIZE_XLARGE);
         boolean isLarge = ((screenLayout & Configuration.SCREENLAYOUT_SIZE_MASK) == Configuration.SCREENLAYOUT_SIZE_LARGE);
-        final boolean isTablet = (isXlarge || isLarge);
+        final boolean isTablet = isXlarge || isLarge;
 
         Dimension dimen;
 
@@ -99,17 +99,14 @@ public class InterfaceliftMacdropsClient {
         return USER_AGENT;
     }
 
-    protected String getQueryUrl() {
-        Dimension dimen = getSuitablePhotoDimension();
-        Log.d(TAG, "Suggested wallpaper size: " + dimen.toString());
-
+    protected String getQueryUrl(Dimension dimen) {
         return QUERY_HOST + String.format(QUERY_URL, dimen.toString(), mLicense);
     }
 
     protected String fetchPlainText(String query) throws IOException {
         URL url = new URL(query);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setRequestProperty("User-Agent", USER_AGENT);
+        connection.setRequestProperty("User-Agent", getUserAgent());
 
         try {
             InputStream in = new BufferedInputStream(connection.getInputStream());
@@ -125,8 +122,8 @@ public class InterfaceliftMacdropsClient {
         }
     }
 
-    public InterfaceliftWallpaper getLatestWallpaper() throws IOException, JSONException {
-        String respJsonString = fetchPlainText(getQueryUrl());
+    public InterfaceliftWallpaper getLatestWallpaper(Dimension dimen) throws IOException, JSONException {
+        String respJsonString = fetchPlainText(getQueryUrl(dimen));
         JSONObject respJson = (JSONObject) new JSONTokener(respJsonString).nextValue();
 
         JSONObject wallpaperJson = respJson.getJSONObject("wallpaper");
@@ -158,7 +155,7 @@ public class InterfaceliftMacdropsClient {
                 //.setIso(wallpaperJson.getInt("iso"))
                 //.setLatitude(wallpaperJson.getDouble("latitude"))
                 //.setLongitude(wallpaperJson.getDouble("longitude"))
-                //.setTimestamp(wallpaperJson.getLong("timestamp"))
+                .setTimestamp(wallpaperJson.getLong("timestamp"))
                 .setName(wallpaperJson.getString("name"))
                 //.setWebsite(wallpaperJson.getString("website"))
                 //.setTwitter(wallpaperJson.getString("twitter"))

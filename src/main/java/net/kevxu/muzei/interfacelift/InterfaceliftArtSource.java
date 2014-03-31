@@ -31,10 +31,16 @@ public class InterfaceliftArtSource extends RemoteMuzeiArtSource {
         final InterfaceliftMacdropsClient client = new InterfaceliftMacdropsClient(this);
 
         try {
-            InterfaceliftWallpaper wallpaper = client.getLatestWallpaper();
+            InterfaceliftMacdropsClient.Dimension dimen = client.getSuitablePhotoDimension();
+            InterfaceliftMacdropsClient.Dimension alterDimen = new InterfaceliftMacdropsClient.Dimension(dimen.width + 1, dimen.height + 1);
+
+            Log.d(TAG, "Suggested wallpaper size: " + dimen.toString());
+
+            InterfaceliftWallpaper wallpaper = client.getLatestWallpaper(dimen);
+            InterfaceliftWallpaper alterWallpaper = client.getLatestWallpaper(alterDimen);
 
             if (wallpaper == null || wallpaper.getDownloads() == null) {
-                Log.e(TAG, "wallpaper null");
+                Log.w(TAG, "wallpaper null");
                 throw new RetryException();
             }
 
@@ -46,15 +52,26 @@ public class InterfaceliftArtSource extends RemoteMuzeiArtSource {
 
             // TODO: Implement viewIntent for photo description
 
+            InterfaceliftWallpaper downloadWallpaper;
+            if (alterWallpaper != null
+                    && alterWallpaper.getDownloads() != null
+                    && alterWallpaper.getDownloads().size() > 0
+                    && alterWallpaper.getTimestamp() > wallpaper.getTimestamp()) {
+                Log.d(TAG, "Using alternative wallpaper size: " + alterDimen.toString());
 
-            InterfaceliftWallpaper.Download wallpaperDownload = wallpaper.getDownloads().get(0);
+                downloadWallpaper = alterWallpaper;
+            } else {
+                downloadWallpaper = wallpaper;
+            }
+
+            InterfaceliftWallpaper.Download wallpaperDownload = downloadWallpaper.getDownloads().get(0);
             Log.d(TAG, "Found wallpaper size: " + wallpaperDownload.getResolution());
 
-            String token = wallpaper.getToken();
+            String token = downloadWallpaper.getToken();
             if (!token.equals(currentToken)) {
                 publishArtwork(new Artwork.Builder()
-                        .title(wallpaper.getDisplay())
-                        .byline(wallpaper.getName())
+                        .title(downloadWallpaper.getDisplay())
+                        .byline(downloadWallpaper.getName())
                         .imageUri(wallpaperDownload.getUri())
                         .token(token)
                         .build());
